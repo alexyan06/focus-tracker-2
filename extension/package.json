@@ -1,0 +1,11 @@
+{
+  "name": "extension",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Chrome MV3 extension — reports active tab URL/title to the local Electron app over WebSocket.",
+  "scripts": {
+    "build": "echo \"TODO: wire up extension build (vite or esbuild) once scaffolded\" && exit 1",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint . --ext .ts"
+  }
+}

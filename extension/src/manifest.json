@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+  "name": "Focus Tracker Connector",
+  "version": "0.1.0",
+  "description": "Reports the active browser tab to the local Focus Tracker desktop app. Does not collect page content, only the active tab's URL and title.",
+  "permissions": ["tabs"],
+  "host_permissions": [],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "Focus Tracker — connection status"
+  }
+}
