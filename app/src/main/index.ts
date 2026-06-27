@@ -1,5 +1,43 @@
-import { app, BrowserWindow } from "electron";
+import { app, BrowserWindow, ipcMain } from "electron";
 import { join } from "path";
+import type {
+  SessionStartRequest,
+  SessionStartResponse,
+  SessionEndRequest,
+  SessionEndResponse,
+  SessionGetPastRequest,
+  SessionGetPastResponse,
+} from "../shared/ipc";
+import { createSession, endSession, getPastSessions } from "./db";
+
+ipcMain.handle(
+  "session:start",
+  (_e, req: SessionStartRequest): SessionStartResponse => {
+    const { id, startedAt } = createSession(req.task, req.distractionList);
+    return { sessionId: id, startedAt };
+  },
+);
+
+ipcMain.handle(
+  "session:end",
+  (_e, req: SessionEndRequest): SessionEndResponse => {
+    // Summary generation (Claude API) is a later task — store empty summary for now.
+    endSession(req.sessionId, "");
+    return {
+      summary: "Session ended. Summary generation coming in a later task.",
+      nextSteps: [],
+      onTaskSeconds: 0,
+      distractedSeconds: 0,
+    };
+  },
+);
+
+ipcMain.handle(
+  "session:getPast",
+  (_e, req: SessionGetPastRequest): SessionGetPastResponse => ({
+    sessions: getPastSessions(req.limit),
+  }),
+);
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({

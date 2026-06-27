@@ -1,6 +1,11 @@
 /// <reference types="vite/client" />
 
-interface Window {
-  // Stub — fully typed in task 3 via the preload IPC bridge
-  api: object;
+import type { IpcApi } from "../../shared/ipc";
+
+declare global {
+  interface Window {
+    api: IpcApi;
+  }
 }
+
+export {};
