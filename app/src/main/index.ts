@@ -9,11 +9,16 @@ import type {
   SessionGetPastResponse,
 } from "../shared/ipc";
 import { createSession, endSession, getPastSessions } from "./db";
+import { startPolling } from "./poller";
+
+let stopPolling: (() => void) | null = null;
 
 ipcMain.handle(
   "session:start",
   (_e, req: SessionStartRequest): SessionStartResponse => {
     const { id, startedAt } = createSession(req.task, req.distractionList);
+    stopPolling?.();
+    stopPolling = startPolling(id);
     return { sessionId: id, startedAt };
   },
 );
@@ -21,6 +26,8 @@ ipcMain.handle(
 ipcMain.handle(
   "session:end",
   (_e, req: SessionEndRequest): SessionEndResponse => {
+    stopPolling?.();
+    stopPolling = null;
     // Summary generation (Claude API) is a later task — store empty summary for now.
     endSession(req.sessionId, "");
     return {
