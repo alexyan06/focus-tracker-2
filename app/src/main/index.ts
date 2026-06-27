@@ -18,7 +18,7 @@ ipcMain.handle(
   (_e, req: SessionStartRequest): SessionStartResponse => {
     const { id, startedAt } = createSession(req.task, req.distractionList);
     stopPolling?.();
-    stopPolling = startPolling(id);
+    stopPolling = startPolling(id, req.task, req.distractionList);
     return { sessionId: id, startedAt };
   },
 );

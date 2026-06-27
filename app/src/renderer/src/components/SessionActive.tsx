@@ -1,5 +1,15 @@
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
+import type { ClassificationTickPayload } from "../../../shared/ipc";
+
+type Classification = ClassificationTickPayload["classification"] | null;
+
+function statusLabel(c: Classification): string {
+  if (c === null) return "Starting…";
+  if (c === "on_task") return "On task";
+  if (c === "distraction") return "Distraction detected";
+  return "Monitoring…";
+}
 
 interface Props {
   sessionId: string;
@@ -34,6 +44,16 @@ export function SessionActive({
 }: Props): React.JSX.Element {
   const elapsed = useElapsed(startedAt);
   const [loading, setLoading] = useState(false);
+  const [classification, setClassification] = useState<Classification>(null);
+
+  useEffect(() => {
+    const unsub = window.api.classification.onTick((payload) => {
+      if (payload.sessionId === sessionId) {
+        setClassification(payload.classification);
+      }
+    });
+    return unsub;
+  }, [sessionId]);
 
   const handleEnd = async (): Promise<void> => {
     setLoading(true);
@@ -54,7 +74,9 @@ export function SessionActive({
           <p className="text-4xl font-mono font-light tabular-nums">
             {elapsed}
           </p>
-          <p className="mt-1 text-sm text-muted-foreground">Monitoring…</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {statusLabel(classification)}
+          </p>
         </div>
 
         <button
