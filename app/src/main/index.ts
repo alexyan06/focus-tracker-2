@@ -10,6 +10,7 @@ import type {
 } from "../shared/ipc";
 import { createSession, endSession, getPastSessions } from "./db";
 import { startPolling } from "./poller";
+import { startWsServer } from "./ws-server";
 
 let stopPolling: (() => void) | null = null;
 
@@ -69,6 +70,7 @@ function createWindow(): void {
 }
 
 app.whenReady().then(() => {
+  startWsServer();
   createWindow();
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
