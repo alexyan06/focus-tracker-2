@@ -3,6 +3,18 @@ import { app } from "electron";
 
 const WS_PORT = 8743;
 
+export interface BrowserSignal {
+  url: string;
+  tabTitle: string;
+  timestamp: string;
+}
+
+let latestBrowserSignal: BrowserSignal | null = null;
+
+export function getLatestBrowserSignal(): BrowserSignal | null {
+  return latestBrowserSignal;
+}
+
 export function startWsServer(): void {
   const wss = new WebSocketServer({ port: WS_PORT });
 
@@ -34,7 +46,13 @@ export function startWsServer(): void {
           );
           console.log("[ws] connection:hello →", msg);
         } else if (type === "tab:update") {
-          // task 9 will route this into the classifier — log only for now
+          const { url, tabTitle, timestamp } = msg as {
+            type: string;
+            url: string;
+            tabTitle: string;
+            timestamp: string;
+          };
+          latestBrowserSignal = { url, tabTitle, timestamp };
           console.log("[ws] tab:update →", msg);
         }
       }

@@ -2,7 +2,20 @@ import activeWin from "active-win";
 import { BrowserWindow, powerMonitor } from "electron";
 import { insertClassificationEvent } from "./db";
 import { classifyTier1 } from "./classifier";
+import { getLatestBrowserSignal } from "./ws-server";
 import type { ClassificationTickPayload } from "../shared/ipc";
+
+const BROWSER_APP_NAMES = [
+  "google chrome",
+  "chrome",
+  "chromium",
+  "safari",
+  "firefox",
+  "arc",
+  "brave",
+  "microsoft edge",
+  "opera",
+];
 
 const POLL_INTERVAL_MS = 7000;
 
@@ -19,24 +32,50 @@ export function startPolling(
     const appName = win?.owner.name ?? null;
     const windowTitle = win?.title ?? null;
 
-    const classification = classifyTier1(
-      { appName, windowTitle },
-      task,
-      distractionList,
-    );
+    const isBrowser =
+      appName !== null && BROWSER_APP_NAMES.includes(appName.toLowerCase());
+
+    const browserSignal = isBrowser ? getLatestBrowserSignal() : null;
+
+    let classification: ReturnType<typeof classifyTier1>;
+    let signalType: ClassificationTickPayload["signalType"];
+    let rawSignal: object;
+
+    if (browserSignal !== null) {
+      classification = classifyTier1(
+        { appName, windowTitle: browserSignal.tabTitle },
+        task,
+        distractionList,
+      );
+      signalType = "browser";
+      rawSignal = {
+        appName,
+        url: browserSignal.url,
+        tabTitle: browserSignal.tabTitle,
+        idleSeconds,
+      };
+    } else {
+      classification = classifyTier1(
+        { appName, windowTitle },
+        task,
+        distractionList,
+      );
+      signalType = "native";
+      rawSignal = { appName, windowTitle, idleSeconds };
+    }
 
     insertClassificationEvent({
       sessionId,
       timestamp,
-      signalType: "native",
-      rawSignal: { appName, windowTitle, idleSeconds },
+      signalType,
+      rawSignal,
       classification,
     });
 
     const payload: ClassificationTickPayload = {
       sessionId,
       timestamp,
-      signalType: "native",
+      signalType,
       classification,
     };
     BrowserWindow.getAllWindows()[0]?.webContents.send(
@@ -48,7 +87,11 @@ export function startPolling(
       sessionId,
       timestamp,
       appName,
-      windowTitle,
+      signal:
+        browserSignal !== null
+          ? { tabTitle: browserSignal.tabTitle, url: browserSignal.url }
+          : { windowTitle },
+      signalType,
       idleSeconds,
       classification,
     });
